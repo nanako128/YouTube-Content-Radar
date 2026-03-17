@@ -1,9 +1,17 @@
 import { api } from "@/lib/api";
 import VideoCard from "@/components/ui/VideoCard";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, AlertCircle } from "lucide-react";
 
 export default async function BuzzRankingsPage() {
-  const rankings = await api.getTopBuzz();
+  let rankings = [];
+  let error = null;
+
+  try {
+    rankings = await api.getTopBuzz();
+  } catch (e) {
+    console.error("Failed to fetch buzz rankings:", e);
+    error = "Unable to connect to the API. Please ensure the backend server is running.";
+  }
 
   return (
     <div className="space-y-8 pb-12">
@@ -17,7 +25,12 @@ export default async function BuzzRankingsPage() {
         </div>
       </div>
 
-      {rankings.length > 0 ? (
+      {error ? (
+        <div className="p-6 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-3 text-amber-800">
+          <AlertCircle className="w-5 h-5" />
+          <p>{error}</p>
+        </div>
+      ) : rankings.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {rankings.map((ranking) => (
             <VideoCard key={ranking.video.video_id} ranking={ranking} />
