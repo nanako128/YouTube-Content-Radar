@@ -19,10 +19,26 @@ async def run_crawl():
     async with AsyncSessionLocal() as db:
         await discovery_engine.daily_channel_crawl(db)
 
+@celery_app.task(name="app.tasks.crawl_tasks.weekly_keyword_discovery")
+def weekly_keyword_discovery_task():
+    loop = asyncio.get_event_loop()
+    if loop.is_running():
+        asyncio.create_task(run_keyword_discovery())
+    else:
+        loop.run_until_complete(run_keyword_discovery())
+
+async def run_keyword_discovery():
+    async with AsyncSessionLocal() as db:
+        await discovery_engine.keyword_discovery(db)
+
 # Beat schedule
 celery_app.conf.beat_schedule = {
     "daily-crawl": {
         "task": "app.tasks.crawl_tasks.daily_channel_crawl",
         "schedule": 86400.0, # Every 24 hours
+    },
+    "weekly-discovery": {
+        "task": "app.tasks.crawl_tasks.weekly_keyword_discovery",
+        "schedule": 604800.0, # Every 7 days
     },
 }

@@ -48,3 +48,13 @@ class ChannelRead(BaseModel):
 
     class Config:
         from_attributes = True
+
+class KeywordRead(BaseModel):
+    id: int
+    term: str
+    is_active: bool
+    last_discovered_at: Optional[datetime]
+
+    class Config:
+        from_attributes = True
+

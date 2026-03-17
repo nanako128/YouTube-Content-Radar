@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api import videos, channels
+from app.api import videos, channels, keywords
 from app.config import settings
 
 app = FastAPI(title=settings.APP_NAME)
@@ -17,6 +17,7 @@ app.add_middleware(
 # Register routers
 app.include_router(videos.router)
 app.include_router(channels.router)
+app.include_router(keywords.router)
 
 @app.get("/")
 async def root():

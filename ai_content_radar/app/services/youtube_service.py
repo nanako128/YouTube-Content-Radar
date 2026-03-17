@@ -118,4 +118,28 @@ class YouTubeService:
                 
         return comments[:max_results]
 
+    async def search_videos(self, query: str, max_results: int = 50, published_after: Optional[datetime] = None) -> List[Dict[str, Any]]:
+        params = {
+            "part": "snippet",
+            "q": query,
+            "maxResults": max_results,
+            "type": "video",
+            "order": "viewCount",
+        }
+        if published_after:
+            params["publishedAfter"] = published_after.isoformat().replace("+00:00", "Z")
+            
+        data = await self._get("search", params)
+        videos = []
+        for item in data.get("items", []):
+            videos.append({
+                "video_id": item["id"]["videoId"],
+                "channel_id": item["snippet"]["channelId"],
+                "channel_title": item["snippet"]["channelTitle"],
+                "title": item["snippet"]["title"],
+                "description": item["snippet"]["description"],
+                "publish_time": datetime.fromisoformat(item["snippet"]["publishedAt"].replace("Z", "+00:00")),
+            })
+        return videos
+
 youtube_service = YouTubeService()

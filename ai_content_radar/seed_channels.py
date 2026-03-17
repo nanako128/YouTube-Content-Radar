@@ -1,6 +1,7 @@
 import asyncio
 from app.db.database import AsyncSessionLocal
 from app.models.channel import Channel
+from app.models.keyword import Keyword
 from sqlalchemy import select
 
 CHANNELS = [
@@ -11,7 +12,18 @@ CHANNELS = [
     {"channel_id": "UCvXhM23U-lM_57vR89_j6jA", "name": "Lex Fridman"},
 ]
 
-async def seed_channels():
+KEYWORDS = [
+    "AI agents",
+    "Large Language Models",
+    "OpenAI",
+    "NVIDIA",
+    "Crypto",
+    "Tesla",
+    "iPhone 16",
+    "Quantum Computing"
+]
+
+async def seed_data():
     async with AsyncSessionLocal() as db:
         for ch in CHANNELS:
             stmt = select(Channel).where(Channel.channel_id == ch["channel_id"])
@@ -24,8 +36,16 @@ async def seed_channels():
                     avg_view_velocity=10000.0 # Seed with some base velocity
                 )
                 db.add(channel)
+        
+        for kw in KEYWORDS:
+            stmt = select(Keyword).where(Keyword.term == kw)
+            res = await db.execute(stmt)
+            if not res.scalar():
+                keyword = Keyword(term=kw, is_active=True)
+                db.add(keyword)
+                
         await db.commit()
-        print(f"Successfully seeded {len(CHANNELS)} channels.")
+        print(f"Successfully seeded {len(CHANNELS)} channels and {len(KEYWORDS)} keywords.")
 
 if __name__ == "__main__":
-    asyncio.run(seed_channels())
+    asyncio.run(seed_data())

@@ -1,6 +1,6 @@
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
-from app.models import Channel, Video, VideoMetrics, Comment
+from sqlalchemy import select, update, desc
+from app.models import Channel, Video, VideoMetrics, Comment, Keyword
 from app.services.youtube_service import youtube_service
 from app.services.comment_analysis import comment_analysis_service
 from app.utils.score_utils import compute_buzz_score, compute_fresh_score
@@ -94,6 +94,37 @@ class DiscoveryEngine:
 
         # 7. Stage 2: Fetch comments for Top 20 Buzz videos
         await DiscoveryEngine.analyze_top_discussions(db)
+
+    @staticmethod
+    async def keyword_discovery(db: AsyncSession):
+        # 1. Fetch active keywords
+        stmt = select(Keyword).where(Keyword.is_active == True)
+        result = await db.execute(stmt)
+        keywords = result.scalars().all()
+        
+        published_after = datetime.now(timezone.utc) - timedelta(days=7)
+        
+        for kw in keywords:
+            # 2. Search for videos using keyword
+            videos_data = await youtube_service.search_videos(kw.term, max_results=50, published_after=published_after)
+            
+            for v_data in videos_data:
+                # 3. If channel not in DB, add it
+                stmt = select(Channel).where(Channel.channel_id == v_data["channel_id"])
+                res = await db.execute(stmt)
+                channel = res.scalar()
+                
+                if not channel:
+                    channel = Channel(
+                        channel_id=v_data["channel_id"],
+                        name=v_data["channel_title"],
+                        is_curated=False # Newly discovered
+                    )
+                    db.add(channel)
+                    await db.commit()
+            
+            kw.last_discovered_at = datetime.now(timezone.utc)
+            await db.commit()
 
     @staticmethod
     async def analyze_top_discussions(db: AsyncSession):
