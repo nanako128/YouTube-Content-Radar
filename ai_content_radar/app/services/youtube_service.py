@@ -11,6 +11,7 @@ class YouTubeService:
 
     async def _get(self, endpoint: str, params: Dict[str, Any]) -> Dict[str, Any]:
         params["key"] = self.api_key
+        # Accept-Encoding: gzip is handled by httpx automatically
         async with httpx.AsyncClient() as client:
             response = await client.get(f"{self.BASE_URL}/{endpoint}", params=params)
             response.raise_for_status()
@@ -19,7 +20,8 @@ class YouTubeService:
     async def get_uploads_playlist_id(self, channel_id: str) -> Optional[str]:
         params = {
             "part": "contentDetails",
-            "id": channel_id
+            "id": channel_id,
+            "fields": "items/contentDetails/relatedPlaylists/uploads"
         }
         data = await self._get("channels", params)
         if data.get("items"):
@@ -35,6 +37,7 @@ class YouTubeService:
                 "part": "snippet",
                 "playlistId": playlist_id,
                 "maxResults": 50,
+                "fields": "items(snippet(publishedAt,resourceId/videoId,title,description)),nextPageToken"
             }
             if next_page_token:
                 params["pageToken"] = next_page_token
@@ -68,17 +71,19 @@ class YouTubeService:
             batch = video_ids[i:i+50]
             params = {
                 "part": "statistics,snippet,contentDetails",
-                "id": ",".join(batch)
+                "id": ",".join(batch),
+                "fields": "items(id,statistics(viewCount,likeCount,commentCount),snippet(tags),contentDetails(duration))"
             }
             data = await self._get("videos", params)
             for item in data.get("items", []):
+                stats = item.get("statistics", {})
                 results.append({
                     "video_id": item["id"],
-                    "view_count": int(item["statistics"].get("viewCount", 0)),
-                    "like_count": int(item["statistics"].get("like_count", 0) if "like_count" in item["statistics"] else item["statistics"].get("likeCount", 0)),
-                    "comment_count": int(item["statistics"].get("commentCount", 0)),
-                    "tags": item["snippet"].get("tags", []),
-                    "duration": item["contentDetails"]["duration"], # ISO 8601 duration
+                    "view_count": int(stats.get("viewCount", 0)),
+                    "like_count": int(stats.get("likeCount", 0)),
+                    "comment_count": int(stats.get("commentCount", 0)),
+                    "tags": item.get("snippet", {}).get("tags", []),
+                    "duration": item.get("contentDetails", {}).get("duration"), # ISO 8601 duration
                 })
         return results
 
@@ -91,7 +96,8 @@ class YouTubeService:
                 "part": "snippet",
                 "videoId": video_id,
                 "maxResults": min(100, max_results - len(comments)),
-                "textFormat": "plainText"
+                "textFormat": "plainText",
+                "fields": "items(id,snippet/topLevelComment/snippet(textDisplay,likeCount,publishedAt)),nextPageToken"
             }
             if next_page_token:
                 params["pageToken"] = next_page_token
@@ -125,6 +131,7 @@ class YouTubeService:
             "maxResults": max_results,
             "type": "video",
             "order": "viewCount",
+            "fields": "items(id/videoId,snippet(channelId,channelTitle,title,description,publishedAt))"
         }
         if published_after:
             params["publishedAfter"] = published_after.isoformat().replace("+00:00", "Z")
