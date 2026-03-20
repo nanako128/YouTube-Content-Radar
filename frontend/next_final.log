@@ -1,0 +1,20 @@
+
+> frontend@0.1.0 dev
+> next dev
+
+   ▲ Next.js 14.1.0
+   - Local:        http://localhost:3000
+
+ ✓ Ready in 1423ms
+(node:25883) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ○ Compiling / ...
+(node:25883) ExperimentalWarning: CommonJS module /Users/kamiyananako/Desktop/YouTube Content Radar/frontend/node_modules/tailwindcss/lib/lib/load-config.js is loading ES Module /Users/kamiyananako/Desktop/YouTube Content Radar/frontend/tailwind.config.ts using require().
+Support for loading ES Module in require() is an experimental feature and might change at any time
+ ✓ Compiled / in 2.1s (575 modules)
+Failed to fetch rankings: Error: API error: Internal Server Error
+    at fetchAPI (webpack-internal:///(rsc)/./lib/api.ts:11:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Promise.all (index 1)
+    at async Home (webpack-internal:///(rsc)/./app/page.tsx:25:61)
+ ✓ Compiled in 118ms (263 modules)
