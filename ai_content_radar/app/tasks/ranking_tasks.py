@@ -12,8 +12,10 @@ def daily_ranking_generation_task():
         loop.run_until_complete(run_ranking())
 
 async def run_ranking():
+    print("Starting daily ranking generation...")
     async with AsyncSessionLocal() as db:
         await ranking_service.generate_daily_rankings(db)
+    print("Rankings updated successfully!")
 
 # Update beat schedule
 celery_app.conf.beat_schedule.update({
@@ -22,3 +24,6 @@ celery_app.conf.beat_schedule.update({
         "schedule": 86400.0, # Every 24 hours, should run AFTER crawl
     }
 })
+
+if __name__ == "__main__":
+    asyncio.run(run_ranking())

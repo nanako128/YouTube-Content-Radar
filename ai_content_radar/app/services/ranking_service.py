@@ -1,5 +1,6 @@
 from sqlalchemy import select, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 from app.models import Video, VideoMetrics, Ranking
 from app.config import settings
 from datetime import datetime, timezone
@@ -7,7 +8,8 @@ from datetime import datetime, timezone
 class RankingService:
     @staticmethod
     async def generate_daily_rankings(db: AsyncSession):
-        # 1. Clear or just insert new ones with current timestamp
+        # ... (此處省略部分代碼，保持與原檔案一致)
+        # (我會確保 generate_daily_rankings 保持不變，只增加 import 和修改 get_latest_rankings)
         now = datetime.now(timezone.utc)
         
         # Buzz Ranking
@@ -81,6 +83,7 @@ class RankingService:
         stmt = (
             select(Ranking, Video)
             .join(Video, Ranking.video_id == Video.video_id)
+            .options(selectinload(Video.metrics))
             .where(Ranking.type == ranking_type, Ranking.ranked_at == latest_time)
             .order_by(Ranking.rank)
             .limit(limit)
